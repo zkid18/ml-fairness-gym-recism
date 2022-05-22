@@ -22,10 +22,11 @@ import zipfile
 from absl import app
 from absl import flags
 from absl import logging
-import file_util
 import numpy as np
 import pandas as pd
 import six
+import tensorflow.compat.v1 as tf
+
 
 flags.DEFINE_string('movielens_url',
                     'http://files.grouplens.org/datasets/movielens/ml-1m.zip',
@@ -35,7 +36,7 @@ flags.DEFINE_string(
     'tag_genome_url',
     'http://files.grouplens.org/datasets/tag-genome/tag-genome.zip',
     'Url to download tag genome dataset.')
-flags.DEFINE_string('output_directory', None, 'location to write CSV files to.')
+flags.DEFINE_string('output_directory', './output', 'location to write CSV files to.')
 
 FLAGS = flags.FLAGS
 
@@ -78,18 +79,21 @@ def read_movielens_data(url):
   movies_df = pd.read_csv(
       downloaded_zip.open('ml-1m/movies.dat', 'r'),
       sep='::',
+      engine ='python',
       names=['movieId', 'title', 'genres'],
       encoding='iso-8859-1')
 
   users_df = pd.read_csv(
       downloaded_zip.open('ml-1m/users.dat', 'r'),
       sep='::',
+      engine ='python',
       names=['userId', 'sex', 'age', 'occupation', 'zip_code'],
       encoding='iso-8859-1')
 
   ratings_df = pd.read_csv(
       downloaded_zip.open('ml-1m/ratings.dat', 'r'),
       sep='::',
+      engine ='python',
       names=['userId', 'movieId', 'rating', 'timestamp'],
       encoding='iso-8859-1')
   return movies_df, users_df, ratings_df
@@ -134,19 +138,19 @@ def merge_with_genome_data(url, target_tag, dataframes):
 def write_csv_output(dataframes, directory):
   """Write csv file outputs."""
   movies, users, ratings = dataframes
-  file_util.makedirs(directory)
 
   del movies['tag_id']  # This column isn't necessary.
 
+  logging.info('Start saving to csv')
+
   users.to_csv(
-      file_util.open(os.path.join(directory, 'users.csv'), 'w'),
-      index=False,
-      columns=['userId'])
+      os.path.join(directory, 'users.csv'),
+      index=False)
   movies.to_csv(
-      file_util.open(os.path.join(directory, 'movies.csv'), 'w'),
+      os.path.join(directory,'movies.csv'),
       index=False)
   ratings.to_csv(
-      file_util.open(os.path.join(directory, 'ratings.csv'), 'w'),
+      os.path.join(directory,'ratings.csv'),
       index=False)
 
 
