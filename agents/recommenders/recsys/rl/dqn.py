@@ -116,9 +116,13 @@ class DQNAgent(DecayingEpsilonGreedy):
 
 
     def top_k_actions_for_state(self, state: Any, k: int = 1) -> Any:
-        # TODO:
-        pass
-
+        state_flat = state.flatten()
+        if self.buffer.ready_to_predict():
+            action = super().action_for_state(state_flat)
+        else:
+            action = self.explore()
+        self._check_update_network()
+        return action
 
     def explore(self):
         return self.random_state.choice(self.actions)

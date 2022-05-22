@@ -1,11 +1,13 @@
 import numpy as np
-from base_agent import ReinforcementLearning
+from agents.recommenders.recsys.rl.base_agent import ReinforcementLearning
 from typing import Any, List, Optional
 
-from experience_replay.experience_buffer import ExperienceReplayBuffer, ExperienceReplayBufferParameters
+from agents.recommenders.recsys.experience_replay.experience_buffer import (
+    ExperienceReplayBuffer,
+    ExperienceReplayBufferParameters
+)
 
-
-from pydeeprecsys.rl.neural_networks.policy_estimator import PolicyEstimator
+from agents.recommenders.recsys.nn.policy_estimator import PolicyEstimator
 from torch import FloatTensor
 
 
@@ -22,17 +24,14 @@ class ReinforceAgent(ReinforcementLearning):
         learning_rate=1e-3,
     ):
         self.episode_count = 0
-
         if not hidden_layers:
             hidden_layers = [state_size * 2, state_size * 2]
-        
         self.policy_estimator = PolicyEstimator(
             state_size,
             hidden_layers,
             n_actions,
             learning_rate=learning_rate,
         )
-
         self.discount_factor = discount_factor
         # starts the buffer
         self.reset_buffer()
@@ -63,7 +62,6 @@ class ReinforceAgent(ReinforcementLearning):
         """From a list of rewards obtained in an episode, we calculate
         the return minus the baseline. The baseline is the list of discounted
         rewards minus the mean, divided by the standard deviation."""
-        
         discount_r = np.zeros_like(rewards)
         timesteps = range(len(rewards))
         reward_sum = 0

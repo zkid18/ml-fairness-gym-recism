@@ -5,7 +5,7 @@ from torch import FloatTensor, multinomial, Tensor
 from torch import sum as torch_sum
 from torch.distributions import Categorical
 import numpy as np
-from nn.base_network import BaseNetwork
+from agents.recommenders.recsys.nn.base_network import BaseNetwork
 
 
 class PolicyEstimator(BaseNetwork):
