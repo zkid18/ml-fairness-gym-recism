@@ -6,7 +6,7 @@ from numpy.random import RandomState
 import numpy as np
 
 from agents.recommenders.recsys.rl.base_agent import ReinforcementLearning
-
+from agents.recommenders.recsys.statistics import LearningStatistics
 
 import torch
 
@@ -94,15 +94,23 @@ class Manager(object):
     def train(
         self,
         rl: ReinforcementLearning,
+        statistics: Optional[LearningStatistics] = None,
         max_episodes=50,
         should_print: bool = True,
     ):
+
         if should_print is True:
             print("Training...")
+
         episode_rewards = []
         for episode in range(max_episodes):
             state = self.env.reset()
             rewards = []
+
+            if statistics:
+                statistics.episode = episode
+                statistics.timestep = 0
+
             done = False
             while done is False:
                 if self.slate_size == 1:
@@ -117,8 +125,18 @@ class Manager(object):
                 )  # guardar experiencia en el buffer
                 rewards.append(reward)
                 state = new_state.copy()
+
+                if statistics:
+                    statistics.timestep += 1
+
             episode_rewards.append(sum(rewards))
             moving_average = np.mean(episode_rewards[-100:])
+
+            if statistics:
+                statistics.append_metric("episode_rewards", sum(rewards))
+                statistics.append_metric("timestep_rewards", rewards)
+                statistics.append_metric("moving_rewards", moving_average)
+
             if should_print is True:
                 print(
                     "\rEpisode {:d} Mean Rewards {:.2f} Last Reward {:.2f}\t\t".format(

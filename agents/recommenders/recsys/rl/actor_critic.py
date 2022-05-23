@@ -1,4 +1,3 @@
-import numpy as np
 from agents.recommenders.recsys.rl.base_agent import ReinforcementLearning
 from typing import Any, List, Optional
 
@@ -8,30 +7,41 @@ from agents.recommenders.recsys.experience_replay.experience_buffer import (
 )
 
 from agents.recommenders.recsys.nn.policy_estimator import PolicyEstimator
-from torch import FloatTensor
+from agents.recommenders.recsys.nn.value_estimator import ValueEstimator
 
 
-class ReinforceAgent(ReinforcementLearning):
+class ActorCriticAgent(ReinforcementLearning):
     """Policy estimator using a value estimator as a baseline.
-    It's on-policy, for discrete action spaces, and episodic environments."""
+    It's on-policy, for discrete action spaces, and episodic environments.
+    This implementation uses stochastic policies.
+    TODO: could be a sub class of reinforce"""
 
     def __init__(
         self,
         n_actions: int,
         state_size: int,
-        hidden_layers: Optional[List[int]] = None,
-        discount_factor: int = 0.99,  # a.k.a gamma
-        learning_rate=1e-3,
+        discount_factor: int = 0.99,
+        actor_hidden_layers: Optional[List[int]] = None,
+        critic_hidden_layers: Optional[List[int]] = None,
+        actor_learning_rate=1e-3,
+        critic_learning_rate=1e-3,
     ):
+        if not actor_hidden_layers:
+            actor_hidden_layers = [state_size * 2, state_size * 2]
+        if not critic_hidden_layers:
+            critic_hidden_layers = [state_size * 2, int(state_size / 2)]
         self.episode_count = 0
-        if not hidden_layers:
-            hidden_layers = [state_size * 2, state_size * 2]
-        
+        self.value_estimator = ValueEstimator(
+            state_size,
+            critic_hidden_layers,
+            1,
+            learning_rate=critic_learning_rate,
+        )
         self.policy_estimator = PolicyEstimator(
             state_size,
-            hidden_layers,
+            actor_hidden_layers,
             n_actions,
-            learning_rate=learning_rate,
+            learning_rate=actor_learning_rate,
         )
         self.discount_factor = discount_factor
         # starts the buffer
@@ -59,26 +69,17 @@ class ReinforceAgent(ReinforcementLearning):
             self.learn_from_experiences()
             self.reset_buffer()
 
-    def discounted_rewards(self, rewards: np.array) -> np.array:
-        """From a list of rewards obtained in an episode, we calculate
-        the return minus the baseline. The baseline is the list of discounted
-        rewards minus the mean, divided by the standard deviation."""
-        discount_r = np.zeros_like(rewards)
-        timesteps = range(len(rewards))
-        reward_sum = 0
-        for i in reversed(timesteps):
-            reward_sum = rewards[i] + self.discount_factor * reward_sum
-            discount_r[i] = reward_sum
-        return_mean = discount_r.mean()
-        return_std = discount_r.std()
-        baseline = (discount_r - return_mean) / return_std
-        return baseline
-
     def learn_from_experiences(self):
         experiences = list(self.buffer.experience_queue)
-        states, actions, rewards, dones, next_states = zip(*experiences)
-        advantages = self.discounted_rewards(rewards)
-        advantages_tensor = FloatTensor(advantages).to(
-            device=self.policy_estimator.device
-        )
-        self.policy_estimator.update(states, advantages_tensor, actions)
+        for timestep, experience in enumerate(experiences):
+            total_return = 0
+            for i, t in enumerate(experiences[timestep:]):
+                total_return += (self.discount_factor ** i) * t.reward
+
+            # Calculate baseline/advantage
+            baseline_value = self.value_estimator.predict(experience.state).detach()
+            advantage = total_return - baseline_value
+            # Update our value estimator
+            self.value_estimator.update(experience.state, total_return)
+            # Update our policy estimator
+            self.policy_estimator.update(experience.state, advantage, experience.action)
