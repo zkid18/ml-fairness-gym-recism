@@ -26,7 +26,6 @@ class ExperienceReplayBufferParameters:
         self.batch_size = batch_size
         self.random_state = random_state
 
-
 class PERBufferParameters:
     """Parameters to configure the priorititization of experiences in a
     Prioritized-Experience Replay Buffer"""
@@ -42,7 +41,6 @@ class PERBufferParameters:
         self.beta_growth = beta_growth
         self.alpha = alpha
         self.epsilon = epsilon
-
 
 class ExperienceBuffer(ABC):
     @abstractmethod

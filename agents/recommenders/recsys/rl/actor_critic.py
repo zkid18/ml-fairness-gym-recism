@@ -12,10 +12,7 @@ from agents.recommenders.recsys.nn.value_estimator import ValueEstimator
 
 class ActorCriticAgent(ReinforcementLearning):
     """Policy estimator using a value estimator as a baseline.
-    It's on-policy, for discrete action spaces, and episodic environments.
-    This implementation uses stochastic policies.
-    TODO: could be a sub class of reinforce"""
-
+    This implementation uses stochastic policies."""
     def __init__(
         self,
         n_actions: int,

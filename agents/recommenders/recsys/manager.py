@@ -130,7 +130,7 @@ class Manager(object):
                     statistics.timestep += 1
 
             episode_rewards.append(sum(rewards))
-            moving_average = np.mean(episode_rewards[-100:])
+            moving_average = np.mean(episode_rewards[-50:])
 
             if statistics:
                 statistics.append_metric("episode_rewards", sum(rewards))

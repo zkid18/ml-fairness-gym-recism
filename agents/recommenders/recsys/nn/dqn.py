@@ -30,7 +30,7 @@ def sequential_architecture(layers: List[int], bias: bool = True) -> Module:
 
 
 class DeepQNetwork(BaseNetwork):
-    """Implementation of a Deep Q Network with a Sequential arquitecture. Layers are
+    """Implementation of a Deep Q Network with a Sequential architecture. Layers are
     supposed to be provided as a list of torch modules."""
 
     def __init__(
